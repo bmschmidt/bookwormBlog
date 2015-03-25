@@ -12,24 +12,80 @@
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     $mathjax$
     <style>
-        body { 
-            font-family: 'Open Sans', sans-serif;
-        }
-        body { margin-top: 80px; }
+      body {
+      font-family: 'Open Sans', sans-serif;
+      }
+      body { margin-top: 80px; }
     </style>
+
+    <link href="../bookwormD3/css/bookworm.css" rel="stylesheet">
+
+    <script src="../bookwormD3/js/d3.v3.min.js"></script>
+    <script src="../bookwormD3/js/pca.js"></script>
+    <script src="../bookwormD3/js/jquery-2.0.3.min.js"></script>
+    <script src="../bookwormD3/js/colorbrewer.js"></script>
+    <script src="../bookwormD3/js/beautify.js"></script>
+    <script src="../bookwormD3/js/topojson.v1.min.js"></script>
+    <script src="../bookwormD3/js/d3-svg-legend.js"></script>
+    <script type="text/javascript" src="../bookwormD3/js/colorbar.js"></script>
+    <script type="text/javascript" src="../bookwormD3/js/bookworm.js"></script>
+
+
+    <script>
+      //A special function just for this blog.
+      bookwormArea = function(id,query,width,height) {
+      width = width || 900
+      height = height || 500
+      var parent = d3.select("#"+ id).style("width",width).style("height",height).style("background","white")//.style("background-opacity",.1)
+      parent.append("text").attr("transform","translate(25," + height/2 + ")").text("click to load plot").style("opacity",1).style("font-size","96").style("font-color","red");
+      var strung = JSON.stringify(query).match(/.{1,80}/g);
+      strung.forEach(function(d,i) {
+      parent.append("text").text(d).attr("y",35 + 14*(i+1)).style("font-family","monospace")
+      })
+      parent.on("click",function() {
+      parent.on("click","").style("background","").style("opacity",1).selectAll("text").remove()
+      var worm = new Bookworm(query);
+      worm.silent=true
+      worm(parent)
+      })
+      }
+
+    </script>
+
+    <script>
+      //An even more special function
+      bookwormSVG = function(element,query,width,height) {
+      //Grab any SVGs in the div.
+      var parent = d3.select(element.parentNode).selectAll("svg")
+      console.log(this);
+      width = width || 900;
+      height = height || 500;
+      var parent = parent.style("width",width).style("height",height).style("background","white");
+      parent.on("click","")
+      var worm = new Bookworm(query);
+      worm.silent=true;
+      worm(parent);
+//      })  
+    }
+    </script>
+
   </head>
   <body>
     $partial("templates/nav.html")$
 
     <div class="container">
       <h2>$title$</h2>
+      <p>$author$, $date$</p>
+
       $body$
       $partial("templates/footer.html")$
     </div>
 
-    </div><!-- /.container -->
-    <script src="/js/jquery.js"></script>
-    <script src="/js/bootstrap.js"></script>
-    <script src="/js/holder.js"></script>
-  </body>
+</div><!-- /.container -->
+<script src="/js/jquery.js"></script>
+<script src="/js/bootstrap.js"></script>
+<script src="/js/holder.js"></script>
+
+
+</body>
 </html>

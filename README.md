@@ -1,62 +1,33 @@
-hakyll-bootstrap
-================
 
-<p align="center" style="padding: 20px; width: 50%">
-<img src="https://raw.github.com/sdiehl/hakyll-bootstrap/master/sample.png">
-</p>
+This is a robust blogging template for sharing the results of a bookworm installation.
 
-A template for a small corporate Hakyll site.
+Rather than just throw up a few links on twitter, or struggle with screenshotting them, this lets you write posts directly in markdown and
+structure bookworm charts as bookworm API calls for full documentability, extensibility, and interactivity. Just by including a Bookworm codeblock in your markdown like this:
 
-To get started run:
+   ```bookworm width=500 height=1200
+   {"search_limits":{"word"},"aesthetic":{"x":"year","y":"WordsPerMillion"},"plotType":"linechart"}
+   ```
 
-```shell
-$ cabal sandbox init
-$ cabal install --only-dependencies
-$ cabal run preview
-```
+You'll get an svg panel running a live version of the chart. This is made easy through the Bookworm D3.js API, which extends the normal bookworm API to include elements from the grammar of graphics.
 
-To compile the full executable site generator use:
 
-```shell
-$ ghc --make Main.hs
-$ ./Main rebuild
-```
+It will work fine as another blog as well not focused on bookworm, but I'd really think of it primarily as a way to engage in public, exploratory data analysis in a way where your conclusions are immediately shareable and manipulable by anyone out there.
 
-The default static pages are renderd with plain HTML with mixins
-from the ``/templates`` folder..
+I hope to set up two: one on my personal server, at 
 
-```
-index.html
+I'm using Bootstrap on top of hakyll--which is a slightly odd combination--because hakyll gives the easiest access to full pandoc templates (and is much faster than jekyll to boot), while bootstrap means that it will be much easier to drop in user-oriented controls where useful (including things like changing the word searched for.).
 
-pages/
-  about.html
-  contact.html
-  privacy.html
-  signup.html
-  team.html
-  tos.html
-```
+Future plans
+------------
 
-Blog posts are placed under the ``/posts`` folder and are
-generated from Markdown.
+1. I'd really like to also spin up a phantomjs workflow which will cache local png versions of each chart as well, solving some of the important persistence issues that face database-oriented services like this one. To keep this fully in Haskell, rather than use a Make architecture we'll probably call phantomjs directly from the haskell interpreter on encountering a code block.
 
-Inline math is enabled via setting the ``mathjax`` metadata to
-``on``, by default MathJax is disabled.
 
-```text
----
-title: Example Blog Post
-author: Stephen Diehl
-date: 2013-11-13
-mathjax: on
----
+LICENSE
+-------
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam
-non est in neque luctus eleifend. Sed tincidunt vestibulum
-facilisis. Aenean ut pulvinar massa.
-```
 
-License
---------
-
-Released under MIT License.
+Anything in pages/ or posts/ is copyright Ben Schmidt, all rights reserved.
+The material in js/ and css/ comes under a variety of licenses.
+Materials specific to the *creation of this site:* including the contents of templates/ site.hs, are under the MIT license.
+Many of those elements are taken from [Stephen Diehl](Stephen Diehl); he should be acknowledged in the supporting apparatus of any derivative works.
