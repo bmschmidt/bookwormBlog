@@ -30,4 +30,9 @@ LICENSE
 Anything in pages/ or posts/ is copyright Ben Schmidt, all rights reserved.
 The material in js/ and css/ comes under a variety of licenses.
 Materials specific to the *creation of this site:* including the contents of templates/ site.hs, are under the MIT license.
-Many of those elements are taken from [Stephen Diehl](Stephen Diehl); he should be acknowledged in the supporting apparatus of any derivative works.
+
+
+Acknowledgements.
+===================
+
+Many of those elements are taken from [Stephen Diehl's Hakyll Bootstrap template.](https://github.com/sdiehl/hakyll-bootstrap); he should be acknowledged in the supporting apparatus of any derivative works.
