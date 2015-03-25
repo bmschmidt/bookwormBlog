@@ -4,9 +4,11 @@ This is a robust blogging template for sharing the results of a bookworm install
 Rather than just throw up a few links on twitter, or struggle with screenshotting them, this lets you write posts directly in markdown and
 structure bookworm charts as bookworm API calls for full documentability, extensibility, and interactivity. Just by including a Bookworm codeblock in your markdown like this:
 
-   ```bookworm width=500 height=1200
-   {"search_limits":{"word"},"aesthetic":{"x":"year","y":"WordsPerMillion"},"plotType":"linechart"}
-   ```
+```
+ ```bookworm width=500 height=1200
+ {"search_limits":{"word"},"aesthetic":{"x":"year","y":"WordsPerMillion"},"plotType":"linechart"}
+ ```
+```
 
 You'll get an svg panel running a live version of the chart. This is made easy through the Bookworm D3.js API, which extends the normal bookworm API to include elements from the grammar of graphics.
 
