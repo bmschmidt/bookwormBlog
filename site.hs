@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 --------------------------------------------------------------------
 -- |
--- Copyright :  (c) Stephen Diehl 2013
+-- Copyright :  (c) Stephen Diehl 2013, Ben Schmidt 2015 
 -- License   :  MIT
--- Maintainer:  stephen.m.diehl@gmail.com
+-- Maintainer:  bmschmidt@gmail.com
 -- Stability :  experimental
 -- Portability: non-portable
 --
@@ -17,6 +17,13 @@ import Text.Pandoc.Walk (walk,query)
 import Data.Monoid (mappend)
 import qualified Data.Map as M
 import Network.HTTP.Base (urlEncode)
+
+--- For hashing Bookworm dicts
+
+import qualified Data.ByteString as B
+import Data.Text.Encoding as E
+import qualified Data.Text as T
+import Crypto.Hash (digestToHexByteString, Digest, hash, SHA1)
 
 --------------------------------------------------------------------
 -- Contexts
@@ -62,6 +69,9 @@ static = do
     route idRoute
     compile compressCssCompiler
   match "js/*" $ do
+    route idRoute
+    compile $ copyFileCompiler
+  match "images/*" $ do
     route idRoute
     compile $ copyFileCompiler
   match "bookwormD3/**" $ do
@@ -142,39 +152,114 @@ myFeedConfiguration = FeedConfiguration
     , feedRoot        = "http://blog.bookworm.benschmidt.org/"
     }
 
+------
+-- Toggle-display builder
+------
 
+  
+
+buildToggleDisplay :: String -> [Block]
+buildToggleDisplay code = do
+  let hash = encodeSHA1 code
+  let roles = ["PNG","SVG","Code"]
+  let headerHead="<div role=\"tabpanel\"><ul class=\"nav nav-tabs\" role=\"tablist\">"
+  let headerContent = unwords $ map (buildTab hash) roles
+  let headerEnd="</ul></div>"
+  let tabsHead = "<div class=\"tab-content\">"
+  let tabsContent = unwords $ map (buildPanel code hash) roles
+  let tabsEnd = "</div>"
+  map (RawBlock "html") [headerHead, headerContent, headerEnd,tabsHead,tabsContent,tabsEnd]
+
+--The tabs
+buildTab :: String -> String -> String
+buildTab hash role = do
+  let id = hash ++ "-" ++ role
+  let classname = isActive role
+  let tab = "<li role=\"presentation\" class=\"" ++ classname ++ "\"><a href=\"#" ++ id ++ "\" aria-controls=\""++ id ++"\"role=\"tab\" data-toggle=\"tab\">" ++ role ++ "</a></li>"
+  tab
+
+isActive :: String -> String
+isActive "PNG" = "active"
+isActive x = ""
+
+panelContent :: String -> String -> String -> String
+
+panelContent jsonDefinition hash "SVG" = do
+  let cleancode = replaceCharacter '\n' ' ' $ replaceCharacter '"' '\'' jsonDefinition
+  let clickFunction = "\"bookwormSVG(this," ++ cleancode ++ ")\""
+  -- width and height should be pulled from the keyvals
+  let id = "SVG-" ++ hash
+  let width = "800"
+  "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ " id=" ++ id ++ "></svg>"
+
+panelContent code hash "Code" = do
+  writeHtmlString def $ Pandoc nullMeta [(CodeBlock ("Code" ++ "-" ++ hash ,["json"],[]) code)]
+
+panelContent code hash "PNG" = do
+  writeHtmlString def $ Pandoc nullMeta $ [Plain [Image [Str (urlEncode code)] ("../images/" ++ hash ++ ".png","Static Image")]] 
+
+panelContent code hash format = format
+
+buildPanel :: String -> String -> String -> String
+buildPanel code hash role = do
+  let id = hash ++ "-" ++ role
+  let content = panelContent code hash role
+  unwords["<div role=\"tabpanel\" class=\"tab-pane " ++ (isActive role) ++ "\" id=\"" ++ id ++ "\">", content, "</div>"]
+
+--The actual divs
 
 --------------------------------------------------------------------
 -- Custom Pandoc Filters
 --------------------------------------------------------------------
 
+--- I encode each query as a SHA1 hex to identify it consistently.
+-- Sidenote: oh my God Haskell sometimes seems completely ridiculous.
+-- According Stack Overflow, this is the most efficient to encode
+-- a string as SHA1! It takes four separate module imports!
+-- Will it work on unicode? In theory...
+
+sha1Hex :: B.ByteString -> B.ByteString
+sha1Hex s = digestToHexByteString (hash s :: Digest SHA1)
+
+encodeSHA1 :: String -> String
+encodeSHA1 s = do
+  T.unpack $ E.decodeUtf8 $ sha1Hex $ E.encodeUtf8 $ T.pack s
+
+-- Something else that seems odd to have to code myself:
+  
 replaceCharacter :: Char -> Char -> [Char] -> [Char]
 replaceCharacter s r value = do
   map (\c -> if c==s then r; else c) value
 
-lookupMetadata:: String -> [(String,String)] -> String
 
-getSvgAttr :: String -> String
-getSvgAttr "width" = "600px"
-getSvgAttr "height" = "600px"
-getSvgAttr "background" = "grey"
-getSvgAttr x = ""
+bookwormSvg :: String -> Inline
+bookwormSvg jsonDefinition = do
+  let cleancode = replaceCharacter '\n' ' ' $ replaceCharacter '"' '\'' jsonDefinition
+  let clickFunction = "\"bookwormSVG(this," ++ cleancode ++ ")\""
+  -- width and heigh should be pulled from the keyvals
+  let width = "600"
+  let id = "SVG-" ++ (encodeSHA1 jsonDefinition)
+  RawInline (Format "html") $ "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ " id=" ++ id ++ "></svg>"
 
 bookwormFormatBlock :: Block -> Block
 bookwormFormatBlock (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
   let proxy = (CodeBlock (codeblock,["json"],keyvals) code)
-  let cleancode = replaceCharacter '\n' ' ' $ replaceCharacter '"' '\'' code
-  let clickFunction = "\"bookwormSVG(this," ++ cleancode ++ ")\""
-
-  let svg = RawInline (Format "html") $ "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ "></svg>"
+  let svg = bookwormSvg code
   let attr = ("",["bookworm"],[])
   Div attr [proxy,Plain [svg]]
-  
+
 bookwormFormatBlock x = x
+
+bookwormFormatBlock2 :: Block -> Block
+bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
+  let attr = ("",["bookworm"],[])
+--  Div attr [Plain [RawInline (Format "html") (buildToggleDisplay code)]]
+  Div attr (buildToggleDisplay code)
+bookwormFormatBlock2 x = x
 
 swapBookwormBlocks :: Pandoc -> Pandoc
 swapBookwormBlocks (Pandoc meta blocks) = do
-  let newblocks = walk bookwormFormatBlock blocks
+  let newblocks = walk bookwormFormatBlock2 blocks
   Pandoc meta newblocks
 
 --------------------------------------------------------------------
