@@ -18,15 +18,19 @@ import Data.Monoid (mappend)
 import qualified Data.Map as M
 import Network.HTTP.Base (urlEncode)
 
---- For hashing Bookworm dicts
+-- Bookworm-specific functions
+import Bookworm
 
-import qualified Data.ByteString as B
-import Data.Text.Encoding as E
-import qualified Data.Text as T
-import Crypto.Hash (digestToHexByteString, Digest, hash, SHA1)
+---------------
+-- Temporary --
+---------------
+
+--matcher :: Rules()
+--matcher = do
+--  match "fonts/*"
 
 --------------------------------------------------------------------
--- Contexts
+--                          Contexts                              --
 --------------------------------------------------------------------
 
 postCtx :: Context String
@@ -95,6 +99,15 @@ posts = do
       >>= loadAndApplyTemplate "templates/post.html" postCtx
       >>= relativizeUrls
 
+json :: Rules ()
+json = do
+  match "posts/*" $ do
+    route $ setExtension "html"
+    compile $ compiler
+      >>= saveSnapshot "content"
+      >>= loadAndApplyTemplate "templates/post.html" postCtx
+      >>= relativizeUrls
+
 archive :: Rules ()
 archive = do
   create ["archive.html"] $ do
@@ -104,7 +117,6 @@ archive = do
       makeItem ""
         >>= loadAndApplyTemplate "templates/archive.html" (archiveCtx posts)
         >>= relativizeUrls
-
 
 navbar :: Rules ()
 navbar = do
@@ -152,11 +164,9 @@ myFeedConfiguration = FeedConfiguration
     , feedRoot        = "http://blog.bookworm.benschmidt.org/"
     }
 
-------
--- Toggle-display builder
-------
-
-  
+------------------------------
+--- Toggle-display builder ---
+------------------------------
 
 buildToggleDisplay :: String -> [Block]
 buildToggleDisplay code = do
@@ -184,6 +194,7 @@ isActive x = ""
 
 panelContent :: String -> String -> String -> String
 
+
 panelContent jsonDefinition hash "SVG" = do
   let cleancode = replaceCharacter '\n' ' ' $ replaceCharacter '"' '\'' jsonDefinition
   let clickFunction = "\"bookwormSVG(this," ++ cleancode ++ ")\""
@@ -193,8 +204,11 @@ panelContent jsonDefinition hash "SVG" = do
   "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ " id=" ++ id ++ "></svg>"
 
 panelContent code hash "Code" = do
-  writeHtmlString def $ Pandoc nullMeta [(CodeBlock ("Code" ++ "-" ++ hash ,["json"],[]) code)]
-
+  -- benschmidt.org should *not* be hardcoded in here. Rather, there should be a native version of the web app
+  -- bundled with the Hakyll distro.
+  let string = writeHtmlString def $ Pandoc nullMeta [(CodeBlock ("Code" ++ "-" ++ hash ,["json"],[]) code)]
+  "<a href=http://benschmidt.org/BookwormD3#" ++ (urlEncode code) ++ ">" ++ string ++ "</a>"
+  
 panelContent code hash "PNG" = do
   writeHtmlString def $ Pandoc nullMeta $ [Plain [Image [Str (urlEncode code)] ("../images/" ++ hash ++ ".png","Static Image")]] 
 
@@ -212,21 +226,9 @@ buildPanel code hash role = do
 -- Custom Pandoc Filters
 --------------------------------------------------------------------
 
---- I encode each query as a SHA1 hex to identify it consistently.
--- Sidenote: oh my God Haskell sometimes seems completely ridiculous.
--- According Stack Overflow, this is the most efficient to encode
--- a string as SHA1! It takes four separate module imports!
--- Will it work on unicode? In theory...
-
-sha1Hex :: B.ByteString -> B.ByteString
-sha1Hex s = digestToHexByteString (hash s :: Digest SHA1)
-
-encodeSHA1 :: String -> String
-encodeSHA1 s = do
-  T.unpack $ E.decodeUtf8 $ sha1Hex $ E.encodeUtf8 $ T.pack s
 
 -- Something else that seems odd to have to code myself:
-  
+
 replaceCharacter :: Char -> Char -> [Char] -> [Char]
 replaceCharacter s r value = do
   map (\c -> if c==s then r; else c) value
@@ -241,21 +243,40 @@ bookwormSvg jsonDefinition = do
   let id = "SVG-" ++ (encodeSHA1 jsonDefinition)
   RawInline (Format "html") $ "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ " id=" ++ id ++ "></svg>"
 
-bookwormFormatBlock :: Block -> Block
-bookwormFormatBlock (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
-  let proxy = (CodeBlock (codeblock,["json"],keyvals) code)
-  let svg = bookwormSvg code
-  let attr = ("",["bookworm"],[])
-  Div attr [proxy,Plain [svg]]
+--bookwormFormatBlock :: Block -> Block
+--bookwormFormatBlock (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
+--  let proxy = (CodeBlock (codeblock,["json"],keyvals) code)
+--  let svg = bookwormSvg code
+--  let attr = ("",["bookworm"],[])
+--  Div attr [proxy,Plain [svg]]
 
-bookwormFormatBlock x = x
+-- bookwormFormatBlock x = x
+
+-- extractBlock :: Block -> [String]
+-- extractBlock CodeBlock (codeblock,["bookworm"],keyvals) code = [code]
+-- extractBlock _ _= []
+
+-- extractBlocks :: Pandoc -> [String]
+-- extractBlocks = query extractBlock
+
+
+--- Format blocks
 
 bookwormFormatBlock2 :: Block -> Block
 bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
-  let attr = ("",["bookworm"],[])
---  Div attr [Plain [RawInline (Format "html") (buildToggleDisplay code)]]
-  Div attr (buildToggleDisplay code)
+--  let attr = ("",["bookworm"],keyvals)
+  --Div attr [Plain [RawInline (Format "html") (buildToggleDisplay code)]]
+--  Div attr $ buildToggleDisplay code
+    bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm2"],keyvals) code)
+
+bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm2"],keyvals) code) = do
+  -- We also attach a unique identifier to the code.
+  let hash = encodeSHA1 code
+  let keyvals2 = keyvals ++ [("hashcode",hash),("jsonQuery",(urlEncode code))]
+  let attr = (codeblock,["bookworm2"],keyvals2)
+  Div attr [CodeBlock (codeblock,["json"],[]) code]
 bookwormFormatBlock2 x = x
+
 
 swapBookwormBlocks :: Pandoc -> Pandoc
 swapBookwormBlocks (Pandoc meta blocks) = do
@@ -283,3 +304,4 @@ main = hakyllWith cfg $ do
   index
   templates
   pages
+  
