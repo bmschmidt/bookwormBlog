@@ -1,3 +1,15 @@
+## Copyrighted elements
+
+All files in posts/ are fully copyrighted, 2015, by Benjamin Schmidt, with all rights reserved.
+This includes any files with a `.markdown` or `.html` suffix except those in `templates`.
+
+The intent of this is to allow users to build their blogs using this infrastructure, but not to 
+recreate the ideas or research contained in this one.
+
+## Open Source
+
+Haskell and javascript code (files with a .js or .hs suffix, or anything in the directory /templates) is available under the MIT license.
+
 The MIT License (MIT)
 
 Copyright (c) 2013 Stephen Diehl, (c) 2015 Benjamin Schmidt
