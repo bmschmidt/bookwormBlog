@@ -17,6 +17,7 @@ import Text.Pandoc.Walk (walk,query)
 import Data.Monoid (mappend)
 import qualified Data.Map as M
 import Network.HTTP.Base (urlEncode)
+import System.Environment (getArgs)
 
 -- Bookworm-specific functions
 import Bookworm
@@ -161,66 +162,8 @@ myFeedConfiguration = FeedConfiguration
     ,  feedDescription = "Examples of dynamic Bookworm charts in a re-usable bootstrap framework."
     , feedAuthorName  = "Ben Schmidt"
     , feedAuthorEmail = "bmschmidt@gmail.com"
-    , feedRoot        = "http://blog.bookworm.benschmidt.org/"
+    , feedRoot        = "http://bookworm.benschmidt.org/"
     }
-
-------------------------------
---- Toggle-display builder ---
-------------------------------
-
-buildToggleDisplay :: String -> [Block]
-buildToggleDisplay code = do
-  let hash = encodeSHA1 code
-  let roles = ["PNG","SVG","Code"]
-  let headerHead="<div role=\"tabpanel\"><ul class=\"nav nav-tabs\" role=\"tablist\">"
-  let headerContent = unwords $ map (buildTab hash) roles
-  let headerEnd="</ul></div>"
-  let tabsHead = "<div class=\"tab-content\">"
-  let tabsContent = unwords $ map (buildPanel code hash) roles
-  let tabsEnd = "</div>"
-  map (RawBlock "html") [headerHead, headerContent, headerEnd,tabsHead,tabsContent,tabsEnd]
-
---The tabs
-buildTab :: String -> String -> String
-buildTab hash role = do
-  let id = hash ++ "-" ++ role
-  let classname = isActive role
-  let tab = "<li role=\"presentation\" class=\"" ++ classname ++ "\"><a href=\"#" ++ id ++ "\" aria-controls=\""++ id ++"\"role=\"tab\" data-toggle=\"tab\">" ++ role ++ "</a></li>"
-  tab
-
-isActive :: String -> String
-isActive "PNG" = "active"
-isActive x = ""
-
-panelContent :: String -> String -> String -> String
-
-
-panelContent jsonDefinition hash "SVG" = do
-  let cleancode = replaceCharacter '\n' ' ' $ replaceCharacter '"' '\'' jsonDefinition
-  let clickFunction = "\"bookwormSVG(this," ++ cleancode ++ ")\""
-  -- width and height should be pulled from the keyvals
-  let id = "SVG-" ++ hash
-  let width = "800"
-  "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ " id=" ++ id ++ "></svg>"
-
-panelContent code hash "Code" = do
-  -- benschmidt.org should *not* be hardcoded in here. Rather, there should be a native version of the web app
-  -- bundled with the Hakyll distro.
-  let string = writeHtmlString def $ Pandoc nullMeta [(CodeBlock ("Code" ++ "-" ++ hash ,["json"],[]) code)]
-  "<a href=http://benschmidt.org/BookwormD3#" ++ (urlEncode code) ++ ">" ++ string ++ "</a>"
-  
-panelContent code hash "PNG" = do
-  writeHtmlString def $ Pandoc nullMeta $ [Plain [Image [Str (urlEncode code)] ("../images/" ++ hash ++ ".png","Static Image")]] 
-
-panelContent code hash format = format
-
-buildPanel :: String -> String -> String -> String
-buildPanel code hash role = do
-  let id = hash ++ "-" ++ role
-  let content = panelContent code hash role
-  unwords["<div role=\"tabpanel\" class=\"tab-pane " ++ (isActive role) ++ "\" id=\"" ++ id ++ "\">", content, "</div>"]
-
---The actual divs
 
 --------------------------------------------------------------------
 -- Custom Pandoc Filters
@@ -229,58 +172,22 @@ buildPanel code hash role = do
 
 -- Something else that seems odd to have to code myself:
 
-replaceCharacter :: Char -> Char -> [Char] -> [Char]
-replaceCharacter s r value = do
-  map (\c -> if c==s then r; else c) value
+bookwormFormatBlock :: Block -> Block
+bookwormFormatBlock (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
+    bookwormFormatBlock (CodeBlock (codeblock,["bookworm2"],keyvals) code)
 
-
-bookwormSvg :: String -> Inline
-bookwormSvg jsonDefinition = do
-  let cleancode = replaceCharacter '\n' ' ' $ replaceCharacter '"' '\'' jsonDefinition
-  let clickFunction = "\"bookwormSVG(this," ++ cleancode ++ ")\""
-  -- width and heigh should be pulled from the keyvals
-  let width = "600"
-  let id = "SVG-" ++ (encodeSHA1 jsonDefinition)
-  RawInline (Format "html") $ "<svg style=\"background:grey;width:" ++ width ++ "\" onclick=" ++ clickFunction ++ " id=" ++ id ++ "></svg>"
-
---bookwormFormatBlock :: Block -> Block
---bookwormFormatBlock (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
---  let proxy = (CodeBlock (codeblock,["json"],keyvals) code)
---  let svg = bookwormSvg code
---  let attr = ("",["bookworm"],[])
---  Div attr [proxy,Plain [svg]]
-
--- bookwormFormatBlock x = x
-
--- extractBlock :: Block -> [String]
--- extractBlock CodeBlock (codeblock,["bookworm"],keyvals) code = [code]
--- extractBlock _ _= []
-
--- extractBlocks :: Pandoc -> [String]
--- extractBlocks = query extractBlock
-
-
---- Format blocks
-
-bookwormFormatBlock2 :: Block -> Block
-bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm"],keyvals) code) = do
---  let attr = ("",["bookworm"],keyvals)
-  --Div attr [Plain [RawInline (Format "html") (buildToggleDisplay code)]]
---  Div attr $ buildToggleDisplay code
-    bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm2"],keyvals) code)
-
-bookwormFormatBlock2 (CodeBlock (codeblock,["bookworm2"],keyvals) code) = do
+bookwormFormatBlock (CodeBlock (codeblock,["bookworm2"],keyvals) code) = do
   -- We also attach a unique identifier to the code.
   let hash = encodeSHA1 code
   let keyvals2 = keyvals ++ [("hashcode",hash),("jsonQuery",(urlEncode code))]
   let attr = (codeblock,["bookworm2"],keyvals2)
   Div attr [CodeBlock (codeblock,["json"],[]) code]
-bookwormFormatBlock2 x = x
+bookwormFormatBlock x = x
 
 
 swapBookwormBlocks :: Pandoc -> Pandoc
 swapBookwormBlocks (Pandoc meta blocks) = do
-  let newblocks = walk bookwormFormatBlock2 blocks
+  let newblocks = walk bookwormFormatBlock blocks
   Pandoc meta newblocks
 
 --------------------------------------------------------------------
@@ -296,7 +203,13 @@ cfg :: Configuration
 cfg = defaultConfiguration
 
 main :: IO ()
-main = hakyllWith cfg $ do
+main = do
+  (action:_) <- getArgs
+  let postsPattern = if action == "watch"
+                     then "posts/*" .||. "drafts/*"
+                     else "posts/*"
+
+  hakyllWith cfg $ do
   static
   pages
   posts

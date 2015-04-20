@@ -1,4 +1,4 @@
-<!DOCTYPE HTML>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -37,7 +37,7 @@
       width = width || 900
       height = height || 500
       var parent = d3.select("#"+ id).style("width",width).style("height",height).style("background","white")//.style("background-opacity",.1)
-      parent.append("text").attr("transform","translate(25," + height/2 + ")").text("click to load plot").style("opacity",1).style("font-size","96").style("font-color","red");
+      parent.append("text").attr("transform","translate(25," + height/2 + ")").text("Mouseover to load plot").style("opacity",1).style("font-size","96").style("font-color","red");
       var strung = JSON.stringify(query).match(/.{1,80}/g);
       strung.forEach(function(d,i) {
       parent.append("text").text(d).attr("y",35 + 14*(i+1)).style("font-family","monospace")
@@ -70,17 +70,114 @@
     </script>
 
 <script>
-//The most special of all
+// The most special of all: find all divs classed "bookworm2," and use the "code" block inside them
+// as a the query for a new tabbed bookworm plot.
 
-bookwormDiv = function(element,query,width,height) {
+// Unlike most Bookworm code, this requires both D3 **and** JQuery.
 
+     updateBookworms = function() {
+     var divs = d3.selectAll(".bookworm2")
+
+     divs.each(function(d,i) {
+       var selector = d3.select(this)
+       var codeBlock = selector.selectAll("code")
+       var code=d3.select(this).selectAll("code").text()
+       var bworm = Bookworm(JSON.parse(code))
+       this.__bookworm__ = bworm
+
+       // The default items that can also be specified in the code block.
+       var width = selector.attr("width") || d3.min([window.innerWidth*.8,640])
+       var height = selector.attr("height") || d3.min([window.innerHeight*.8,480])
+
+       // Which of the tabs should be chosen by default.
+       var defaultView = selector.attr("default") || "SVG"
+
+       // Allows accessing the elements programatically in your blog post.
+       var id = selector.attr("id") || ""
+       selector.attr("id",id)
+
+       //Create a list of tabs
+
+       var panel = selector.append("div").attr("role","tabpanel")
+       var tablist = panel.append("ul").attr("class","nav nav-tabs").attr("role","tablist")
+       var tabData = [
+                       {"name":"SVG","description":"Interactive SVG"},
+//                       {"name":"image","description":"Persistent Image"},
+//                       {"name":"data","description":"Raw Data"},
+                       {"name":"code","description":"Bookworm Query"}
+                     ]
+
+       var tabs = tablist.selectAll("li").data(tabData)
+
+       tabs.enter()
+           .append("li").attr("role","presentation")
+           .append("a")
+             .attr("href",function(d) {return "#" + d.name + i})
+             .classed("active",function(d,i) {return d.name==defaultView})
+             .attr("aria-controls",function(d) {return d.name + i}).attr("role","tab")
+             .attr("data-toggle","tab").text(function(d) {return d.description})
+
+       divs = panel.append("div").attr("class","tab-content").selectAll("div").data(tabData)
+
+
+       divs
+           .enter()
+           .append("div").attr("role","tabpanel").attr("class","tab-pane")
+           .classed("active",function(d) {return d.name==defaultView})
+           .attr("id",function(d) {return d.name + i})
+           .each(function(d) {
+               if (d.name=="SVG") {
+                  var svg_div = d3.select(this)
+                  var selectionOptions = svg_div.append("div").attr("class","selectionOptions")
+                  var svgID = "SVG-n" + i 
+                  var svg = svg_div.append("svg")
+                            .attr("width",width).attr("height",height)
+                            .attr("id",svgID)
+                  svg
+                            .append("text")
+                            .attr("x","15")
+                            .attr("y",24)
+                            .style("font-size",24)
+                            .text("Click to load chart")
+
+                  // Some kind of on-visibility would make a **lot** of sense here.
+                  var nothing = function() {}
+                  svg.on("mouseover",function() {
+                    svg.selectAll("text").remove()
+                    bworm(svg)
+                    svg.on('mouseover',"")
+                    svg.on('click',"")
+                  })
+
+                  svg.on("click",function() {
+                       svg.selectAll("text").remove()
+                       bworm(svg)
+                       svg.on('click',function() {})
+                  })
+                  if (selector.attr("filters")) {
+                      var prefs = {}
+                      selector.attr("filters").split(";").forEach(function(pair) {
+                        splat = pair.split(":")
+                        prefs[splat[0]] = splat[1]
+                      })
+                      setTimeout(function() {bworm.addFilters(prefs,selectionOptions)},1000)
+                  }
+               }
+               if (d.name=="code") {
+                 $$(selector.selectAll("pre").node()).appendTo(this)
+               }
+            })
+
+
+    })
+//     div.node().__bookworm__ = bworm
 }
 
 </script>
 
 
   </head>
-  <body>
+  <body onload="updateBookworms()">
     $partial("templates/nav.html")$
 
     <div class="container">

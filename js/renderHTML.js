@@ -14,7 +14,7 @@ if (!fs.exists(destination)) {
 
     page.viewportSize = {
 	width: 900,
-	height: 600
+	height: 650
     };
 
 
@@ -22,7 +22,7 @@ if (!fs.exists(destination)) {
 	setTimeout(function() {
 	    page.render(destination)
 	    page.evaluate(function() {
-		//console.log(document.documentElement.outerHTML);
+		console.log(document.documentElement.outerHTML);
 	    });
 	    phantom.exit();
 	},10000)

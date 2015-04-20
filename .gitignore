@@ -10,3 +10,7 @@ _site
 cabal.sandbox.config
 .cabal-sandbox/
 site
+args.bash
+images
+json
+drafts/*
