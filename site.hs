@@ -138,17 +138,17 @@ index = do
       makeItem ""
         >>= loadAndApplyTemplate "templates/index.html" (indexCtx posts)
         >>= relativizeUrls
-{-
-rss :: Rules()
-rss = do
-  create ["atom.xml"] $ do
-    route idRoute
-      compile $ do
-        let feedCtx = postCtx `mappend` constField "description" "This is the post description"
-        posts <- fmap (take 10) . recentFirst =<< loadAll "posts/*"
-        renderRss myFeedConfiguration feedCtx posts
--}
 
+atom :: Rules()
+atom = do
+ create ["atom.xml"] $ do
+    route idRoute
+    compile $ do
+        let feedCtx = postCtx `mappend`
+                constField "description" "This is the post description"
+        posts <- fmap (take 10) . recentFirst =<< loadAll "posts/*"
+        renderAtom myFeedConfiguration feedCtx posts
+        
 templates :: Rules ()
 templates = match "templates/*" $ compile templateCompiler
 
@@ -159,7 +159,7 @@ templates = match "templates/*" $ compile templateCompiler
 myFeedConfiguration :: FeedConfiguration
 myFeedConfiguration = FeedConfiguration
     { feedTitle       = "Ben's Bookworm Blog"
-    ,  feedDescription = "Examples of dynamic Bookworm charts in a re-usable bootstrap framework."
+    , feedDescription = "Dynamic Bookworm charts in a re-usable bootstrap-hakyll framework."
     , feedAuthorName  = "Ben Schmidt"
     , feedAuthorEmail = "bmschmidt@gmail.com"
     , feedRoot        = "http://bookworm.benschmidt.org/"
@@ -208,7 +208,6 @@ main = do
   let postsPattern = if action == "watch"
                      then "posts/*" .||. "drafts/*"
                      else "posts/*"
-
   hakyllWith cfg $ do
   static
   pages
@@ -217,4 +216,4 @@ main = do
   index
   templates
   pages
-  
+  atom

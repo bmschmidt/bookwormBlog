@@ -16,7 +16,7 @@ software**, **interactive textual visualizations**, and a
 **exploratory data analysis API for bag-of-words models** can make it possible to quickly and
 usefully share texts through a Bookworm installation.
 
-But this is a difficult task: so for a first post, I want to introduce some elements of the API and talk about why I think a platform like this is valuable for exploring a large collection of texts visually and quantitatively.
+But this is a difficult task. So much so that I have to completely change my blogging stack to do it. So for a first post on this site, I want to introduce some elements of the API and talk about why I think a platform like this is valuable for exploring a large collection of texts visually and quantitatively. Maybe someone will be persuaded to do it themselves.
 
 <!--more-->
 
@@ -24,9 +24,9 @@ This is going to be a somewhat technical post (I'll try to keep the really techn
 
 > Note: even if you don't care about the infrastructure and code that makes up much of this post, you may want to scroll down for a couple of the interactives: language use by popular directors, and a chart that shows the vocabulary used to describe liberal and conservative faculty members on their teaching evaluations.
 
-I want to start thinking about how to reconcile two somewhat distinct traditions in Digital Humanities text-oriented projects.^[Obviously I would never say that these are the **only** two traditions in DH, just the two that I myself sometimes feel torn between. Bookworm itself occupies a space in a larger ecosystem of DH projects targeted at exploring textual collections like Voyant and Wordseer.] One is computationally inclined, shies in the direction of writing articles, performs sometimes elaborate computations, and views reproducible research (where possible) as a matter of sharing code on Github.^[This is a tradition with deep roots in Humanities Computing in literature departments; leading current practitioners are people like Franco Moretti, Matt Jockers, Ted Underwood, and Andrew Piper.] The other is more interested in presenting individual artifacts through robust platforms like Omeka for images or resilient sites for displaying TEI archives.^[Again, a few names at random: Sheila Brennan, Sharon Leon, Tom Scheinfeldt, much of the work at the UVA Scholars Lab.] The latter rarely tries to make broader arguments about its aggregate sources; the former rarely makes its underlying texts accessible except as a few examples. ^[One notable counterexample is the [DFR topic browser that Andrew Goldstone created as part of his collaboration with Ted Underwood on topic modeling literary scholarship.]](http://agoldst.github.io/dfr-browser/demo/).
+I want to start thinking about how to reconcile two somewhat distinct traditions in Digital Humanities text-oriented projects.^[Obviously I would never say that these are the **only** two traditions in DH, just the two that I myself sometimes feel torn between. Bookworm itself occupies a space in a larger ecosystem of DH projects targeted at exploring textual collections like Voyant and Wordseer.] One is computationally inclined, shies in the direction of writing articles, performs sometimes elaborate computations, and views reproducible research (where possible) as a matter of sharing code on Github.^[This is a tradition with deep roots in Humanities Computing in literature departments; leading current practitioners are people like Franco Moretti, Matt Jockers, Ted Underwood, and Andrew Piper.] The other is more interested in presenting individual artifacts through robust platforms like Omeka for images or resilient sites for displaying TEI archives.^[Again, a few names at random: Sheila Brennan, Sharon Leon, Tom Scheinfeldt, much of the work at the UVA Scholars Lab, my colleague Julia Flanders.] The latter rarely tries to make broader arguments about its aggregate sources; the former rarely makes its underlying texts accessible except as a few examples in its text, relying instead largely on flat charts from R or python.^[One notable counterexample is the [DFR topic browser that Andrew Goldstone created as part of his collaboration with Ted Underwood on topic modeling literary scholarship.](http://agoldst.github.io/dfr-browser/demo/)]
 
-I am more a member of the former camp--for whom both sustainability and broad accessibility are awkward questions to be dealt with later. I've been more interested in the amazing new things we can do with million-document collections.
+I count myself, and my two primary blogs, in the former camp. Sustainability and broad accessibility are awkward questions I've put off to deal with later as we rush to do amazing new things we can do with million-document collections. Recently I've been pushed more and more in the direction of web-based interactivity; but sustainability has remained off my horizon.
 
 But the time has come to think through, a little more, how to keep some of these elements around for the long term. The big question this platform struggles with is much broader: how can a platform for textual visualization and criticism be:
 
@@ -34,11 +34,11 @@ But the time has come to think through, a little more, how to keep some of these
 2. Capable of persisting for decades even **off the original server** with its data backend, through locally cached copies on places like the Internet Archive and Github.
 3. As little reliant on the distributed architecture of the Internet era as possible. Large portions of the web would break if Google or JQuery started hosting their minified javascripts at a slightly different URL.
 
-So those are the goals: the platform consists of three parts.
+So those are the goals: the platform consists of three components. From stable to experimental, they are:
 
-1. Something established: the Bookworm platform for text analysis and visualization, currently used as a research and discovery platform by organizations like the [Hathi Trust Research Center](http://bookworm.htrc.illinois.edu/) and the [Yale University Libraries](http://bookworm.library.yale.edu/collections/vogue/).
+1. Something established: the Bookworm platform for text analysis and visualization, currently used as a research and discovery platform by organizations like the [Hathi Trust Research Center](http://bookworm.htrc.illinois.edu/) and the [Yale University Libraries](http://bookworm.library.yale.edu/collections/vogue/). This has its own stack [you can read about in the documentation.](http://bookworm-project.github.io/Docs/)
 2. Something less established but you may have seen: my D3-reimagining of the Bookworm front-end to enable many new forms of visualizations, like [animated maps of the State of the Union](http://www.theatlantic.com/features/archive/2015/01/mapping-the-state-of-the-union/384576/) or dotplots of [differences in vocabulary used in course evaluations of male and female professors](http://benschmidt.org/profGender).
-3. Something entirely new: A [hakyll](http://jaspervdj.be/hakyll/)-based blogging platform to easily share investigations on a Bookworm server. This may not be for everyone, though I hope some other places may want to adopt it. In other cases, rather than hakyll it might make sense to use a local CMS of any sort with embedded Bookworm elements. The basic principles will be the same.^[I'm using Hakyll chiefly because it means I get to easily use Pandoc for transformations from Markdown, and because it means I can distribute straightforward binaries for the Bookworm elements. The Pandoc filters are easily extricable from the overall Hakyll framework.]
+3. Something entirely new: A [hakyll](http://jaspervdj.be/hakyll/)-based blogging platform to easily share investigations on a Bookworm server. [Source code is available on github.](https://github.com/bmschmidt/bookwormBlog) This may not be for everyone, though I hope some other places may want to adopt it. In other cases, rather than hakyll it might make sense to use a local CMS of any sort with embedded Bookworm elements. The basic principles will be the same.^[I'm using Hakyll chiefly because it means I get to easily use Pandoc for transformations from Markdown, and because it means I can distribute straightforward binaries for the Bookworm elements. The Pandoc filters are easily extricable from the overall Hakyll framework. I'm also using it because it's interesting to write in Haskell. I may eventually move some of my other sites from being "proudly powered by Wordpress" to "insufferably powered by Hakyll."]
 
 Last fall, I released a bookworm for
 [looking at trends in language use across 80,000 movies and TV episodes](http://movies.benschmidt.org/). That contained a single interactive chart without much text for
@@ -72,9 +72,12 @@ But unlike most inline graphics on a blog, this is powerfully
 interactive; you can click on any bar to see all of the underlying
 movies, for example.
 
-Plus, since I've added a text box, you can search for anything you want. And a little javascript on my end adds more options. For instance: who do you think uses the word "death" the most? You can go back up to the text box and run an entirely different search: or just click on of the buttons below.
+Plus, since I've added a text box, you can search for anything you want. And a little javascript on my end adds more options. For instance: who do you think uses the word "death" the most? You can go back up to the text box and run an entirely different search: or just click one of the buttons below.^[Getting these buttons to run is the most complicated departure from the standard coding elements on this page: to see the HTML/javascript that does it (about 10 lines), you'll have [read the markdown source and search for 'button'.](https://github.com/bmschmidt/bookwormBlog/blob/master/posts/2015-03-24-new-formats.markdown)]
 
-<button onclick="fixDirectors('death')">Change to 'death'</button><button onclick="fixDirectors('money')">Change to 'money'</button>
+<button onclick="fixDirectors('death')">Change to 'death'</button>
+<button onclick="fixDirectors('money')">Change to 'money'</button>
+<button onclick="fixDirectors('America')">Change to 'America'</button>
+<button onclick="fixDirectors('United States')">Change to 'United States'</button>
 <script>
 // This sort of special code isn't the easiest thing in the world, but it's also not the hardest. If you're looking in here, check out these comments to see how it works.
 //first, obviously, I just created some HTML elements inside my markdown and bound them to a function. 
@@ -169,7 +172,6 @@ yet implemented support for a format like JSONP]
 
 #### Embedding responsive Bookworm visualization with simple javascript.
 ```javascript
-
 // Define a query
 var query = { "database": "federalist",
  "plotType": "barchart",
@@ -186,10 +188,13 @@ var svg = d3.select("body").append("svg");
 
 // Stamp the SVG with the chart that you want.
 newBookworm(svg);
+
+//If you change the query object, you can refresh the plot with:
+newBookworm.updatePlot()
 ```
 
 If you want to build a robust, powerful visualization and you know 
-some javascript, this provides a relatively easy way to do so without even knowing D3 at all.^[Although D3 must be loaded, the only actually D3 you have to do is a single line like `d3.select("#my-svg")`; exactly the same selector format as in jQuery, just slightly more verbose.]
+some javascript, this provides a relatively easy way to do so without even knowing D3 at all.^[Although D3 must be loaded, the only actually D3 you have to do is a single line like `d3.select("#my-svg")`; exactly the same selector format as in jQuery, just slightly more verbose. If this bothers anyone, I could also make it work on the raw DOM node or a jQuery selector; but in most cases, that will just be more complicated.] 
 
 You can just dynamically manipulate the bookworm element's `query`
 object to create dynamic charts that are fully updateable with things like the
@@ -211,6 +216,7 @@ the Haskell code or binaries and HTML template necessary to compile visualizatio
 HTML, though you'll still probably have to be self-hosting.] Here's what that block
 looks like as Markdown, with the height and width specified in advance:
 
+### An example Markdown block from this blog.
 	```{.bookworm width=400 height=300}
 	{ "database": "federalist",
 	"plotType": "barchart",
@@ -266,7 +272,7 @@ The final element looks like this. If you type elements into the
 box, the bars will automatically update to reflect whatever word
 you've chosen.
 
-```{.bookworm default="code" filters="word:textArray" width=600 height=300}
+```{.bookworm filters="word:textArray" width=600 height=300}
 	{ "database": "federalist",
 	"plotType": "barchart",
 	"search_limits": {
@@ -310,12 +316,12 @@ female professors. The create call for this is relatively simple. Just click on 
 
 But a powerful API means that there are many, many more ways to look at this. Just a line of difference makes this a comparison of Democrats and Republicans:
 
-## Rate My Professor: Language use by political party and department
-```{.bookworm default="code" filters="word:textArray"}
+## Rate My Professor: Descriptions by political party and department
+```{.bookworm default="SVG" filters="word:textArray"}
 	{ "database": "RMP",
 	"plotType": "pointchart",
 	"search_limits": {"department__id":{"$lte":20},"party":["D","R"],
-	"word": ["bow tie"]},
+	"word": ["old"]},
 	"aesthetic": {  "x": "WordsPerMillion",  "y": "department" , "color":"party" }
 	}
 ```
@@ -345,14 +351,13 @@ response to scroll events.
 
 1. For this form, narrative text comes first and foremost. Bookworm is
 great at showing charts; only text is any good at explaining the most
-interesting ones.
+interesting ones to the sort of people who can't read graphs well, which includes many, many humanists.
 2. Pragmatically: I haven't yet mastered the entire art of event listeners that will
 be necessary to make this work.
 3. Most importantly, though, I want a format that can at least gesture
-towards **preservability**.
+towards **preservability**. So that's the rest of the post here.
 
 These interactive graphics are served off a custom API using a running MySQL instance that can be terabytes large. There's good reason to be hopeful that, when a Bookworm instance is useful, we can find ways to make it persist for years. But problems happen--when both Erez and I moved institutions in 2013 in a period when the Bookworm project was not receiving any immediate grant funding, it took about 2 or 3 months to restore the largest installation.
-
 
 In addition to these full measures, I want to take half-measures as well as a failsafe plan. The current state of the Internet Archive cannot cache all the dark content on one of our servers. But it can cache a webpage, with narrative, with a bunch of static PNGs. This site uses a static page-generation framework to make it much easier to cache versions of the page. It also includes a number of scripts for automatically rendering PNGs of the state for every image in the text and embedding it directly in, so that at least the graphical element of the page can remain for as long as web archiving practices persists. These are far less powerful and useful than the interactive images: but at least they mean that a Bookworm page like this continues to meet the basic threshold for sustainability of, say, a pdf on archive.org **even as** it allows much greater interactivity.
 

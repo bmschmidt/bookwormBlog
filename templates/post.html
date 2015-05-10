@@ -8,13 +8,29 @@
     <title>$title$</title>
     <link href="/css/bootstrap.css" rel="stylesheet">
     <link href="/css/syntax.css" rel="stylesheet">
-    <link href="/css/carousel.css" rel="stylesheet">
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     $mathjax$
+
+<link href='http://fonts.googleapis.com/css?family=Lekton:400,700|Source+Sans+Pro|Source+Code+Pro|Alegreya:400italic,700italic,400,700|Alegreya+SC:400,700,700italic|Molengo' rel='stylesheet' type='text/css'>
+
     <style>
-      body {
-      font-family: 'Open Sans', sans-serif;
+      body {	
+        font-family: "Alegreya", Georgia, serif;
+        font-size: 18px;
+	margin: 1em 0;
+	font-weight: normal;
+	font-style: normal;
       }
+
+      svg {	
+        font-family: sans-serif;
+        font-size: 12px;
+	margin: 1em 0;
+	font-weight: normal;
+	font-style: normal;
+
+      }
+
       body { margin-top: 80px; }
     </style>
 
@@ -31,51 +47,50 @@
     <script type="text/javascript" src="../bookwormD3/js/bookworm.js"></script>
 
 
-    <script>
-      //A special function just for this blog.
-      bookwormArea = function(id,query,width,height) {
-      width = width || 900
-      height = height || 500
-      var parent = d3.select("#"+ id).style("width",width).style("height",height).style("background","white")//.style("background-opacity",.1)
-      parent.append("text").attr("transform","translate(25," + height/2 + ")").text("Mouseover to load plot").style("opacity",1).style("font-size","96").style("font-color","red");
-      var strung = JSON.stringify(query).match(/.{1,80}/g);
-      strung.forEach(function(d,i) {
-      parent.append("text").text(d).attr("y",35 + 14*(i+1)).style("font-family","monospace")
-      })
-      parent.on("click",function() {
-      parent.on("click","").style("background","").style("opacity",1).selectAll("text").remove()
-      var worm = new Bookworm(query);
-      worm.silent=true
-      worm(parent)
-      })
-      }
-
-    </script>
-
-    <script>
-      //An even more special function
-      bookwormSVG = function(element,query,width,height) {
-      //Grab any SVGs in the div.
-      var parent = d3.select(element.parentNode).selectAll("svg")
-      console.log(this);
-      width = width || 900;
-      height = height || 500;
-      var parent = parent.style("width",width).style("height",height).style("background","white");
-      parent.on("click","")
-      var worm = new Bookworm(query);
-      worm.silent=true;
-      worm(parent);
-//      })  
-    }
-    </script>
-
 <script>
-// The most special of all: find all divs classed "bookworm2," and use the "code" block inside them
+// A special function to build elaborate tabbed displays for data.
+// Find all divs classed "bookworm2," and use the "code" block inside them
 // as a the query for a new tabbed bookworm plot.
+
+// Actually used!
 
 // Unlike most Bookworm code, this requires both D3 **and** JQuery.
 
-     updateBookworms = function() {
+function tabulate(selection,data, columns) {
+    // Code from http://jsfiddle.net/7WQjr/
+
+    var table = selection.append("table"),
+        thead = table.append("thead"),
+        tbody = table.append("tbody");
+
+    // append the header row
+    thead.append("tr")
+        .selectAll("th")
+        .data(columns)
+        .enter()
+        .append("th")
+            .text(function(column) { return column; });
+
+    // create a row for each object in the data
+    var rows = tbody.selectAll("tr")
+        .data(data)
+        .enter()
+        .append("tr");
+
+    // create a cell in each row for each column
+    var cells = rows.selectAll("td")
+        .data(function(row) {
+            return columns.map(function(column) {
+                return {column: column, value: row[column]};
+            });
+        })
+        .enter()
+        .append("td")
+            .text(function(d) { return d.value; });
+    
+    return table;
+}
+updateBookworms = function() {
      var divs = d3.selectAll(".bookworm2")
 
      divs.each(function(d,i) {
@@ -83,6 +98,7 @@
        var codeBlock = selector.selectAll("code")
        var code=d3.select(this).selectAll("code").text()
        var bworm = Bookworm(JSON.parse(code))
+       bworm.silent = true
        this.__bookworm__ = bworm
 
        // The default items that can also be specified in the code block.
@@ -96,14 +112,18 @@
        var id = selector.attr("id") || ""
        selector.attr("id",id)
 
+       // Automatically set by Hakyll as a SHA1 hash of the query;
+       // used as a storage location for images and data.
+       var hashcode = selector.attr("hashcode")
+
        //Create a list of tabs
 
        var panel = selector.append("div").attr("role","tabpanel")
        var tablist = panel.append("ul").attr("class","nav nav-tabs").attr("role","tablist")
        var tabData = [
                        {"name":"SVG","description":"Interactive SVG"},
-//                       {"name":"image","description":"Persistent Image"},
-//                       {"name":"data","description":"Raw Data"},
+                       {"name":"image","description":"Archival Static Image"},
+                       {"name":"data","description":"Raw Data"},
                        {"name":"code","description":"Bookworm Query"}
                      ]
 
@@ -111,9 +131,9 @@
 
        tabs.enter()
            .append("li").attr("role","presentation")
+             .classed("active",function(d,i) {return d.name==defaultView})
            .append("a")
              .attr("href",function(d) {return "#" + d.name + i})
-             .classed("active",function(d,i) {return d.name==defaultView})
              .attr("aria-controls",function(d) {return d.name + i}).attr("role","tab")
              .attr("data-toggle","tab").text(function(d) {return d.description})
 
@@ -138,7 +158,7 @@
                             .attr("x","15")
                             .attr("y",24)
                             .style("font-size",24)
-                            .text("Click to load chart")
+                            .text("Mouseover to load chart")
 
                   // Some kind of on-visibility would make a **lot** of sense here.
                   var nothing = function() {}
@@ -163,6 +183,21 @@
                       setTimeout(function() {bworm.addFilters(prefs,selectionOptions)},1000)
                   }
                }
+               if (d.name=="image") {
+                  var image_div = d3.select(this)
+                  image_div.append("img").attr("src","../images/"+hashcode+".png")
+               }
+
+               if (d.name=="data") {
+                  var data_div = d3.select(this).append("pre")
+                  data_div.append("text").text("Click this button below to show the data currently underlying the interactive chart.")
+                  data_div.append("text").text("If the chart isn't showing, there will be no data here. If you have updated the chart, you may need to click again to get the latest data")
+                  var button = data_div.append("button").text("Update data")
+                  button.on("click",function() {
+                     data_div.selectAll("pre").remove()
+                     tabulate(data_div.append("pre"),bworm.data,d3.keys(bworm.data[0]))
+                   })
+               }
                if (d.name=="code") {
                  $$(selector.selectAll("pre").node()).appendTo(this)
                }
@@ -185,13 +220,34 @@
       <p>$author$, $date$</p>
 
       $body$
+
+
+      <div id="disqus_thread"></div>
+
       $partial("templates/footer.html")$
     </div>
+
+
 
 </div><!-- /.container -->
 <script src="/js/jquery.js"></script>
 <script src="/js/bootstrap.js"></script>
 <script src="/js/holder.js"></script>
+
+
+
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'benmschmidt';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
 
 
 </body>
