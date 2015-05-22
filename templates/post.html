@@ -8,6 +8,8 @@
     <title>$title$</title>
     <link href="/css/bootstrap.css" rel="stylesheet">
     <link href="/css/syntax.css" rel="stylesheet">
+    <link href="../css/jquery.dataTables.min.css" rel="stylesheet">
+
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     $mathjax$
 
@@ -34,17 +36,24 @@
       body { margin-top: 80px; }
     </style>
 
+
     <link href="../bookwormD3/css/bookworm.css" rel="stylesheet">
 
     <script src="../bookwormD3/js/d3.v3.min.js"></script>
     <script src="../bookwormD3/js/pca.js"></script>
-    <script src="../bookwormD3/js/jquery-2.0.3.min.js"></script>
     <script src="../bookwormD3/js/colorbrewer.js"></script>
     <script src="../bookwormD3/js/beautify.js"></script>
     <script src="../bookwormD3/js/topojson.v1.min.js"></script>
     <script src="../bookwormD3/js/d3-svg-legend.js"></script>
+    <script src="../js/jquery.js"></script>
+    <script src="../js/bootstrap.js"></script>
+    <script src="../js/holder.js"></script>
+    <script src="../js/jquery.dataTables.min.js"></script>
     <script type="text/javascript" src="../bookwormD3/js/colorbar.js"></script>
     <script type="text/javascript" src="../bookwormD3/js/bookworm.js"></script>
+
+
+
 
 
 <script>
@@ -56,49 +65,52 @@
 
 // Unlike most Bookworm code, this requires both D3 **and** JQuery.
 
-function tabulate(selection,data, columns) {
-    // Code from http://jsfiddle.net/7WQjr/
+function tabulate(selection,data) {
 
-    var table = selection.append("table"),
-        thead = table.append("thead"),
-        tbody = table.append("tbody");
+    //clear out any existing tables
+    var tables = selection.selectAll(".dataTables_wrapper").remove()
+    // Create a new table.
+    var table = selection
+         .append("table")
+         .attr("cellpadding",0)
+         .attr("cellspacing",0)
+         .attr("border",0)
+         .attr("class","display")
+         .attr("id","test")
 
-    // append the header row
-    thead.append("tr")
-        .selectAll("th")
-        .data(columns)
-        .enter()
-        .append("th")
-            .text(function(column) { return column; });
+    // Initalize a dataTable using the keys; this requires first. recasting the data a bit.
+     var keys    = d3.keys(data[0])
+     var columns = keys.map(function(key) {return {"title":key}})
+     var data = data.map(function(row) {
+          return keys.map(function(key) {return row[key]})
+     })
 
-    // create a row for each object in the data
-    var rows = tbody.selectAll("tr")
-        .data(data)
-        .enter()
-        .append("tr");
-
-    // create a cell in each row for each column
-    var cells = rows.selectAll("td")
-        .data(function(row) {
-            return columns.map(function(column) {
-                return {column: column, value: row[column]};
-            });
-        })
-        .enter()
-        .append("td")
-            .text(function(d) { return d.value; });
-    
-    return table;
+    $$(table[0]).DataTable( {
+        "data": data,
+        "columns": columns
+     })
 }
+
+
 updateBookworms = function() {
      var divs = d3.selectAll(".bookworm2")
 
      divs.each(function(d,i) {
+
+       // For each bookworm div, find the internal code blocks that contain
+       // a JSON text we use to initialize the queries.
+
        var selector = d3.select(this)
        var codeBlock = selector.selectAll("code")
        var code=d3.select(this).selectAll("code").text()
        var bworm = Bookworm(JSON.parse(code))
+
+       // Tell the bookworm not to update the address bar.
        bworm.silent = true
+
+
+       // Bind a bookworm element to the node for programmatic access (so that
+       // user-defined javascript can update things).
        this.__bookworm__ = bworm
 
        // The default items that can also be specified in the code block.
@@ -108,13 +120,14 @@ updateBookworms = function() {
        // Which of the tabs should be chosen by default.
        var defaultView = selector.attr("default") || "SVG"
 
-       // Allows accessing the elements programatically in your blog post.
-       var id = selector.attr("id") || ""
-       selector.attr("id",id)
-
        // Automatically set by Hakyll as a SHA1 hash of the query;
        // used as a storage location for images and data.
        var hashcode = selector.attr("hashcode")
+
+
+       // Allows accessing the elements programatically in your blog post.
+       var id = selector.attr("id") || hashcode
+       selector.attr("id",id)
 
        //Create a list of tabs
 
@@ -189,13 +202,13 @@ updateBookworms = function() {
                }
 
                if (d.name=="data") {
-                  var data_div = d3.select(this).append("pre")
+                  var data_div = d3.select(this).append("div")
                   data_div.append("text").text("Click this button below to show the data currently underlying the interactive chart.")
                   data_div.append("text").text("If the chart isn't showing, there will be no data here. If you have updated the chart, you may need to click again to get the latest data")
                   var button = data_div.append("button").text("Update data")
                   button.on("click",function() {
                      data_div.selectAll("pre").remove()
-                     tabulate(data_div.append("pre"),bworm.data,d3.keys(bworm.data[0]))
+                     tabulate(data_div,bworm.data)
                    })
                }
                if (d.name=="code") {
@@ -230,9 +243,6 @@ updateBookworms = function() {
 
 
 </div><!-- /.container -->
-<script src="/js/jquery.js"></script>
-<script src="/js/bootstrap.js"></script>
-<script src="/js/holder.js"></script>
 
 
 
