@@ -138,15 +138,15 @@ index = do
       makeItem ""
         >>= loadAndApplyTemplate "templates/index.html" (indexCtx posts)
         >>= relativizeUrls
-
+        
 atom :: Rules()
 atom = do
  create ["atom.xml"] $ do
     route idRoute
     compile $ do
-        let feedCtx = postCtx `mappend`
-                constField "description" "This is the post description"
-        posts <- fmap (take 10) . recentFirst =<< loadAll "posts/*"
+        let feedCtx = postCtx `mappend` bodyField "description"
+        posts <- fmap (take 10) . recentFirst =<<
+            loadAllSnapshots "posts/*" "content"
         renderAtom myFeedConfiguration feedCtx posts
         
 templates :: Rules ()
